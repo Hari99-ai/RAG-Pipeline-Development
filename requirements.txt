@@ -1,0 +1,7 @@
+langchain
+qdrant-client
+PyMuPDF
+Pillow
+sentence-transformers
+ollama
+python-dotenv
