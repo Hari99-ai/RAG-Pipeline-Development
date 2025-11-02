@@ -1,0 +1,26 @@
+[
+  {
+    "id": "chunk_1",
+    "text": "A quadratic equation is an equation of the form ax^2 + bx + c = 0.",
+    "metadata": {
+      "source": "math_notes.pdf",
+      "page": 1
+    }
+  },
+  {
+    "id": "chunk_2",
+    "text": "To solve it, compute the discriminant D = b^2 - 4ac and apply the quadratic formula.",
+    "metadata": {
+      "source": "math_notes.pdf",
+      "page": 1
+    }
+  },
+  {
+    "id": "chunk_3",
+    "text": "The roots are given by (-b ± sqrt(D)) / (2a). The nature of roots depends on D.",
+    "metadata": {
+      "source": "math_notes.pdf",
+      "page": 2
+    }
+  }
+]
