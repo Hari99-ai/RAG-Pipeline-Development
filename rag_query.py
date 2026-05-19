@@ -195,7 +195,18 @@ Answer:"""
         print(response.strip() if isinstance(response, str) else str(response))
         print("\n=== SOURCES ===")
         for d in docs:
-            print(f"- {d.metadata.get('source', 'unknown')}")
+            print(f"- {d.metadata.get('source', 'unknown')} (Page {d.metadata.get('page', '?')})")
+
+        # Extract unique images from retrieved documents
+        images = []
+        for d in docs:
+            for img in d.metadata.get("images", []):
+                if img not in images:
+                    images.append(img)
+        if images:
+            print("\n=== ASSOCIATED IMAGES ===")
+            for img in images:
+                print(f"- {img}")
     except Exception as e:
         print(f"❌ LLM inference error: {e}")
         print("\n--- Context summary fallback ---\n")

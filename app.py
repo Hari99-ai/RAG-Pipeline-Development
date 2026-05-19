@@ -369,13 +369,20 @@ def load_groq_llm(model_name):
 # Query RAG (using Groq)
 # ---------------------------------------------------------------------------
 def query_rag(question, retriever, llm_model, summarize=False):
-    """Run a RAG query using Groq LLM. Returns (answer, sources)."""
+    """Run a RAG query using Groq LLM. Returns (answer, sources, images)."""
     docs = retriever.get_relevant_documents(question)
     if not docs:
-        return "No relevant documents found.", []
+        return "No relevant documents found.", [], []
 
     context = "\n\n".join(d.page_content for d in docs)
     sources = [d.metadata.get("source", "unknown") for d in docs]
+
+    # Extract unique images from retrieved documents
+    images = []
+    for d in docs:
+        for img_path in d.metadata.get("images", []):
+            if img_path and os.path.exists(img_path) and img_path not in images:
+                images.append(img_path)
 
     try:
         llm, model_name = load_groq_llm(llm_model)
@@ -415,7 +422,7 @@ Answer:"""
 {context}
 -------------------------"""
 
-    return answer, sources
+    return answer, sources, images
 
 
 # ===========================================================================
@@ -486,6 +493,13 @@ with tab_chat:
     for msg in st.session_state.chat_history:
         with st.chat_message(msg["role"]):
             st.markdown(msg["content"], unsafe_allow_html=True)
+            if msg.get("images"):
+                st.write("📷 **Associated Diagrams/Images:**")
+                cols = st.columns(min(3, len(msg["images"])))
+                for idx, img_path in enumerate(msg["images"]):
+                    with cols[idx % len(cols)]:
+                        if os.path.exists(img_path):
+                            st.image(img_path, caption=os.path.basename(img_path), use_container_width=True)
 
     # Chat input
     if st.session_state.vectorstore is not None:
@@ -500,7 +514,7 @@ with tab_chat:
                 with st.spinner("Thinking..."):
                     try:
                         retriever = st.session_state.vectorstore.as_retriever(search_kwargs={"k": top_k})
-                        answer, sources = query_rag(prompt, retriever, llm_model, summarize=summarize)
+                        answer, sources, images = query_rag(prompt, retriever, llm_model, summarize=summarize)
 
                         # Format sources
                         unique_sources = list(dict.fromkeys(sources))
@@ -508,11 +522,29 @@ with tab_chat:
                         full_response = f"{answer}\n\n---\n**Sources:**<br>{sources_html}"
 
                         st.markdown(full_response, unsafe_allow_html=True)
-                        st.session_state.chat_history.append({"role": "assistant", "content": full_response})
+
+                        # Render associated images if any
+                        if images:
+                            st.write("📷 **Associated Diagrams/Images:**")
+                            cols = st.columns(min(3, len(images)))
+                            for idx, img_path in enumerate(images):
+                                with cols[idx % len(cols)]:
+                                    if os.path.exists(img_path):
+                                        st.image(img_path, caption=os.path.basename(img_path), use_container_width=True)
+
+                        st.session_state.chat_history.append({
+                            "role": "assistant",
+                            "content": full_response,
+                            "images": images
+                        })
                     except Exception as e:
                         error_msg = f"Error: {e}"
                         st.error(error_msg)
-                        st.session_state.chat_history.append({"role": "assistant", "content": error_msg})
+                        st.session_state.chat_history.append({
+                            "role": "assistant",
+                            "content": error_msg,
+                            "images": []
+                        })
     else:
         st.info("No index available. Switch to the **Index PDF** tab to get started.")
 
