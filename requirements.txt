@@ -1,0 +1,10 @@
+langchain
+langchain-groq
+qdrant-client
+PyMuPDF
+Pillow
+sentence-transformers
+ollama
+python-dotenv
+streamlit
+scikit-learn
