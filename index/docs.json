@@ -1,6 +1,5 @@
 [
   {
-<<<<<<< HEAD
     "text": "SOME APPLICATIONS OF TRIGONOMETRY\n133\n\n\n9\n\n\n9.1 Heights and Distances\n\n\nIn the previous chapter, you have studied about trigonometric ratios. In this chapter,\nyou will be studying about some ways in which trigonometry is used in the life around\nyou.\nLet us consider Fig. 8.1 of prvious chapter, which is redrawn below in Fig. 9.1.\n\n\nFig. 9.1\n\n\nIn this figure, the line AC drawn from the eye of the student to the top of the\nminar is called the line of sight. The student is looking at the top of the minar. The\nangle BAC, so formed by the line of sight with the horizontal, is called the angle of\nelevation of the top of the minar from the eye of the student.\n\n\nThus, the line of sight is the line drawn from the eye of an observer to the point\nin the object viewed by the observer. The angle of elev",
     "source": "Maths_Grade_10.pdf",
     "page": 1,
@@ -1203,7 +1202,8 @@
       "extracted_images\\page11_img795.png",
       "extracted_images\\page11_img789.png"
     ]
-=======
+  },
+  {
     "id": "chunk_1",
     "text": "A quadratic equation is an equation of the form ax^2 + bx + c = 0.",
     "metadata": {
@@ -1226,6 +1226,5 @@
       "source": "math_notes.pdf",
       "page": 2
     }
->>>>>>> d9dbac14df2f064fb4db215e82149bcd300a21fb
   }
 ]
