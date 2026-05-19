@@ -369,10 +369,10 @@ def load_groq_llm(model_name):
 # Query RAG (using Groq)
 # ---------------------------------------------------------------------------
 def query_rag(question, retriever, llm_model, summarize=False):
-    """Run a RAG query using Groq LLM. Returns (answer, sources, images)."""
+    """Run a RAG query using Groq LLM. Returns (answer, sources, images, page_screenshots)."""
     docs = retriever.get_relevant_documents(question)
     if not docs:
-        return "No relevant documents found.", [], []
+        return "No relevant documents found.", [], [], []
 
     context = "\n\n".join(d.page_content for d in docs)
     sources = [d.metadata.get("source", "unknown") for d in docs]
@@ -383,6 +383,29 @@ def query_rag(question, retriever, llm_model, summarize=False):
         for img_path in d.metadata.get("images", []):
             if img_path and os.path.exists(img_path) and img_path not in images:
                 images.append(img_path)
+
+    # Render high-resolution screenshots of the matching pages from the source PDF
+    page_screenshots = []
+    for d in docs:
+        source_pdf = d.metadata.get("source")
+        page_num = d.metadata.get("page")
+        if source_pdf and page_num:
+            pdf_path = os.path.join(DATA_DIR, source_pdf)
+            if os.path.exists(pdf_path):
+                try:
+                    doc = fitz.open(pdf_path)
+                    if 0 < page_num <= len(doc):
+                        page = doc[page_num - 1]
+                        pix = page.get_pixmap(dpi=110)
+                        screenshot_dir = os.path.join(BASE_DIR, "page_screenshots")
+                        os.makedirs(screenshot_dir, exist_ok=True)
+                        screenshot_name = f"{os.path.splitext(source_pdf)[0]}_page_{page_num}.png"
+                        screenshot_path = os.path.join(screenshot_dir, screenshot_name)
+                        pix.save(screenshot_path)
+                        if screenshot_path not in page_screenshots:
+                            page_screenshots.append(screenshot_path)
+                except Exception:
+                    pass
 
     try:
         llm, model_name = load_groq_llm(llm_model)
@@ -422,7 +445,7 @@ Answer:"""
 {context}
 -------------------------"""
 
-    return answer, sources, images
+    return answer, sources, images, page_screenshots
 
 
 # ===========================================================================
@@ -457,6 +480,7 @@ with st.sidebar:
     top_k = st.slider("Top-K Results", min_value=2, max_value=10, value=4)
     collection_name = st.text_input("Collection Name", value=DEFAULT_COLLECTION)
     summarize = st.checkbox("Summarize Context", value=False)
+    show_visual_context = st.checkbox("Show Visual Context (Images/Pages)", value=True)
 
     st.divider()
     if st.button("Reset Chat", use_container_width=True):
@@ -493,13 +517,21 @@ with tab_chat:
     for msg in st.session_state.chat_history:
         with st.chat_message(msg["role"]):
             st.markdown(msg["content"], unsafe_allow_html=True)
-            if msg.get("images"):
-                st.write("📷 **Associated Diagrams/Images:**")
-                cols = st.columns(min(3, len(msg["images"])))
-                for idx, img_path in enumerate(msg["images"]):
-                    with cols[idx % len(cols)]:
-                        if os.path.exists(img_path):
-                            st.image(img_path, caption=os.path.basename(img_path), use_container_width=True)
+            if show_visual_context:
+                if msg.get("images"):
+                    st.write("📷 **Extracted Diagrams / Figures:**")
+                    cols = st.columns(min(3, len(msg["images"])))
+                    for idx, img_path in enumerate(msg["images"]):
+                        with cols[idx % len(cols)]:
+                            if os.path.exists(img_path):
+                                st.image(img_path, caption=os.path.basename(img_path), use_container_width=True)
+                if msg.get("page_screenshots"):
+                    st.write("📄 **Matching PDF Page Screenshots:**")
+                    cols = st.columns(min(2, len(msg["page_screenshots"])))
+                    for idx, scr_path in enumerate(msg["page_screenshots"]):
+                        with cols[idx % len(cols)]:
+                            if os.path.exists(scr_path):
+                                st.image(scr_path, caption=os.path.basename(scr_path), use_container_width=True)
 
     # Chat input
     if st.session_state.vectorstore is not None:
@@ -514,7 +546,7 @@ with tab_chat:
                 with st.spinner("Thinking..."):
                     try:
                         retriever = st.session_state.vectorstore.as_retriever(search_kwargs={"k": top_k})
-                        answer, sources, images = query_rag(prompt, retriever, llm_model, summarize=summarize)
+                        answer, sources, images, page_screenshots = query_rag(prompt, retriever, llm_model, summarize=summarize)
 
                         # Format sources
                         unique_sources = list(dict.fromkeys(sources))
@@ -524,18 +556,29 @@ with tab_chat:
                         st.markdown(full_response, unsafe_allow_html=True)
 
                         # Render associated images if any
-                        if images:
-                            st.write("📷 **Associated Diagrams/Images:**")
-                            cols = st.columns(min(3, len(images)))
-                            for idx, img_path in enumerate(images):
-                                with cols[idx % len(cols)]:
-                                    if os.path.exists(img_path):
-                                        st.image(img_path, caption=os.path.basename(img_path), use_container_width=True)
+                        if show_visual_context:
+                            if images:
+                                st.write("📷 **Extracted Diagrams / Figures:**")
+                                cols = st.columns(min(3, len(images)))
+                                for idx, img_path in enumerate(images):
+                                    with cols[idx % len(cols)]:
+                                        if os.path.exists(img_path):
+                                            st.image(img_path, caption=os.path.basename(img_path), use_container_width=True)
+
+                            # Render page screenshots if any
+                            if page_screenshots:
+                                st.write("📄 **Matching PDF Page Screenshots:**")
+                                cols = st.columns(min(2, len(page_screenshots)))
+                                for idx, scr_path in enumerate(page_screenshots):
+                                    with cols[idx % len(cols)]:
+                                        if os.path.exists(scr_path):
+                                            st.image(scr_path, caption=os.path.basename(scr_path), use_container_width=True)
 
                         st.session_state.chat_history.append({
                             "role": "assistant",
                             "content": full_response,
-                            "images": images
+                            "images": images,
+                            "page_screenshots": page_screenshots
                         })
                     except Exception as e:
                         error_msg = f"Error: {e}"
@@ -543,7 +586,8 @@ with tab_chat:
                         st.session_state.chat_history.append({
                             "role": "assistant",
                             "content": error_msg,
-                            "images": []
+                            "images": [],
+                            "page_screenshots": []
                         })
     else:
         st.info("No index available. Switch to the **Index PDF** tab to get started.")
