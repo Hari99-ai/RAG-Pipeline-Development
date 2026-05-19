@@ -1,5 +1,7 @@
 langchain
 langchain-groq
+langchain-community
+langchain-ollama
 qdrant-client
 PyMuPDF
 Pillow
