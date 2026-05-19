@@ -80,7 +80,9 @@ def init_qdrant_vectorstore(collection_name=DEFAULT_COLLECTION, embedding_model=
     qdrant_url = os.getenv("QDRANT_URL", "http://localhost:6333")
     qdrant_api_key = os.getenv("QDRANT_API_KEY")
     print(f"🔗 Connecting to Qdrant: {qdrant_url}")
-    embeddings = HuggingFaceEmbeddings(model_name=embedding_model)
+    import torch
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    embeddings = HuggingFaceEmbeddings(model_name=embedding_model, model_kwargs={"device": device})
 
     try:
         if qdrant_api_key:

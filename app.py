@@ -54,6 +54,15 @@ GROQ_MODELS = [
 # ---------------------------------------------------------------------------
 from langchain_huggingface import HuggingFaceEmbeddings
 
+def load_huggingface_embeddings(model_name="sentence-transformers/all-MiniLM-L6-v2"):
+    """Load HuggingFace Embeddings using an explicit device to prevent meta-tensor loading bugs."""
+    import torch
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    return HuggingFaceEmbeddings(
+        model_name=model_name,
+        model_kwargs={"device": device}
+    )
+
 # ---------------------------------------------------------------------------
 # Groq LLM Import
 # ---------------------------------------------------------------------------
@@ -221,7 +230,7 @@ def init_vectorstore(collection_name, embedding_model):
     """Initialise Qdrant vectorstore or fall back to local index."""
     qdrant_url = os.getenv("QDRANT_URL", "http://localhost:6333")
     qdrant_api_key = os.getenv("QDRANT_API_KEY")
-    embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
+    embeddings = load_huggingface_embeddings()
 
     # Try Qdrant
     try:
@@ -304,7 +313,7 @@ def index_pdf(pdf_path, collection_name, embedding_model, export_local=True, pro
     blocks = extract_pdf_multimodal(pdf_path)
     chunks = chunk_text(blocks)
 
-    embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
+    embeddings = load_huggingface_embeddings()
 
     # Try Qdrant first
     qdrant_ok = False

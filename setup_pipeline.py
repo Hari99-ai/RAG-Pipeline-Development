@@ -143,7 +143,9 @@ def embed_and_upsert(chunks, collection_name, ollama_model, export_index=False):
         print(Fore.YELLOW + "⚠️ Qdrant not found, using in-memory mode.")
         client = QdrantClient(":memory:")
 
-    embeddings = HuggingFaceEmbeddings(model_name=ollama_model)
+    import torch
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    embeddings = HuggingFaceEmbeddings(model_name=ollama_model, model_kwargs={"device": device})
     vector_size = len(embeddings.embed_query("test"))
     print(Fore.BLUE + f"🧭 Detected embedding vector size: {vector_size}")
 

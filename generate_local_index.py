@@ -61,7 +61,9 @@ def main():
         sys.exit(4)
 
     try:
-        embedder = HuggingFaceEmbeddings(model_name=args.model)
+        import torch
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+        embedder = HuggingFaceEmbeddings(model_name=args.model, model_kwargs={"device": device})
     except Exception as e:
         print("Failed to instantiate HuggingFaceEmbeddings:", e, file=sys.stderr)
         sys.exit(5)
