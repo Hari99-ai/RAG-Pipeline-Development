@@ -375,19 +375,22 @@ def query_rag(question, retriever, llm_model, summarize=False):
         return "No relevant documents found.", []
 
     context = "\n\n".join(d.page_content for d in docs)
-    llm, model_name = load_groq_llm(llm_model)
+    sources = [d.metadata.get("source", "unknown") for d in docs]
 
-    if summarize:
-        summary_prompt = f"""Summarize the following context in 3-5 bullet points:
+    try:
+        llm, model_name = load_groq_llm(llm_model)
+
+        if summarize:
+            summary_prompt = f"""Summarize the following context in 3-5 bullet points:
 
 Context:
 {context}
 
 Summary:"""
-        summary_resp = llm.invoke(summary_prompt)
-        summary_text = summary_resp.content if hasattr(summary_resp, "content") else str(summary_resp)
+            summary_resp = llm.invoke(summary_prompt)
+            summary_text = summary_resp.content if hasattr(summary_resp, "content") else str(summary_resp)
 
-    prompt = f"""You are a clear, helpful tutor. Use the context below to answer.
+        prompt = f"""You are a clear, helpful tutor. Use the context below to answer.
 
 Context:
 {context}
@@ -396,13 +399,22 @@ Question: {question}
 
 Answer:"""
 
-    response = llm.invoke(prompt)
-    answer = response.content if hasattr(response, "content") else str(response)
+        response = llm.invoke(prompt)
+        answer = response.content if hasattr(response, "content") else str(response)
 
-    if summarize:
-        answer = f"**Retrieved Context Summary:**\n{summary_text}\n\n---\n\n**RAG Answer:**\n{answer}"
+        if summarize:
+            answer = f"**Retrieved Context Summary:**\n{summary_text}\n\n---\n\n**RAG Answer:**\n{answer}"
 
-    sources = [d.metadata.get("source", "unknown") for d in docs]
+    except Exception as e:
+        st.warning("Groq API failed or is unavailable. Showing retrieved context instead.")
+        answer = f"""⚠️ **Groq API failed or is unavailable.**
+
+*Showing retrieved document context instead:*
+
+-------------------------
+{context}
+-------------------------"""
+
     return answer, sources
 
 
