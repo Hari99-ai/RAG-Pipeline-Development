@@ -1,10 +1,16 @@
 langchain
+<<<<<<< HEAD
 langchain-groq
+=======
+>>>>>>> d9dbac14df2f064fb4db215e82149bcd300a21fb
 qdrant-client
 PyMuPDF
 Pillow
 sentence-transformers
 ollama
 python-dotenv
+<<<<<<< HEAD
 streamlit
 scikit-learn
+=======
+>>>>>>> d9dbac14df2f064fb4db215e82149bcd300a21fb
