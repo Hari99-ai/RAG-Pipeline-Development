@@ -432,6 +432,10 @@ def query_rag(question, retriever, llm_model, summarize=False):
                 except Exception:
                     pass
 
+    # Cap the number of displayed images and page screenshots to k (length of docs)
+    images = images[:len(docs)]
+    page_screenshots = page_screenshots[:len(docs)]
+
     try:
         llm, model_name = load_groq_llm(llm_model)
 
