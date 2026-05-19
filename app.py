@@ -231,7 +231,12 @@ def init_vectorstore(collection_name, embedding_model):
             client = QdrantClient(url=qdrant_url)
         client.get_collections()
         if QdrantVectorstore:
-            vs = QdrantVectorstore(client=client, collection_name=collection_name, embeddings=embeddings)
+            vs = QdrantVectorstore(
+                client=client,
+                collection_name=collection_name,
+                embeddings=embeddings,
+                content_payload_key="text"
+            )
             return vs, "qdrant"
     except Exception:
         pass
@@ -272,7 +277,13 @@ def init_vectorstore(collection_name, embedding_model):
                     f"Ensure the embedding model matches the one used to create the index."
                 )
             _, idxs = self.nn.kneighbors(qv, n_neighbors=min(self.top_k, len(self.docs)))
-            return [Doc(self.docs[i]["text"], self.docs[i].get("meta", {})) for i in idxs[0]]
+            
+            results = []
+            for i in idxs[0]:
+                d = self.docs[i]
+                meta = {k: v for k, v in d.items() if k != "text"}
+                results.append(Doc(d["text"], meta))
+            return results
 
     class LocalVectorstore:
         def __init__(self, retriever):
