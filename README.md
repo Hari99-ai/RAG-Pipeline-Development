@@ -1,6 +1,10 @@
 # 🧠 Multimodal RAG Pipeline for Educational Content
 
+[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_svg.svg)](https://rag-pipeline-development-k36eya2pnqgbo5bw2bvtym.streamlit.app/)
+
 A fully functional, modern **Retrieval-Augmented Generation (RAG)** pipeline designed to parse, index, query, and summarize multimodal PDF documents containing **text, mathematical formulas, and diagrams**. 
+
+👉 **Live Demo:** [rag-pipeline-development-k36eya2pnqgbo5bw2bvtym.streamlit.app](https://rag-pipeline-development-k36eya2pnqgbo5bw2bvtym.streamlit.app/)
 
 This repository supports both a standard **Command Line Interface (CLI)** and a premium **Streamlit Web Application** for interactive chat and document indexing.
 
