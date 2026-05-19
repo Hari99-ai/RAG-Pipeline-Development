@@ -24,16 +24,15 @@ import fitz  # PyMuPDF
 from qdrant_client import QdrantClient, models as qmodels
 from colorama import Fore, Style, init
 
+os.environ["USE_TF"] = "0"
+os.environ["HF_HUB_DISABLE_TF"] = "1"
+os.environ["TRANSFORMERS_NO_TF"] = "1"
+
 # ---- Color Output Setup ----
 init(autoreset=True)
 
-# ---- Embeddings Import (with fallback) ----
-try:
-    from langchain_ollama import OllamaEmbeddings
-    print(Fore.GREEN + "✅ Using OllamaEmbeddings from: langchain_ollama")
-except Exception:
-    from langchain_community.embeddings import OllamaEmbeddings
-    print(Fore.YELLOW + "✅ Using OllamaEmbeddings from: langchain_community.embeddings")
+# ---- Embeddings Import (HuggingFace) ----
+from langchain_huggingface import HuggingFaceEmbeddings
 
 # ---- Ollama Model Import ----
 Ollama = None
@@ -144,7 +143,7 @@ def embed_and_upsert(chunks, collection_name, ollama_model, export_index=False):
         print(Fore.YELLOW + "⚠️ Qdrant not found, using in-memory mode.")
         client = QdrantClient(":memory:")
 
-    embeddings = OllamaEmbeddings(model=ollama_model)
+    embeddings = HuggingFaceEmbeddings(model_name=ollama_model)
     vector_size = len(embeddings.embed_query("test"))
     print(Fore.BLUE + f"🧭 Detected embedding vector size: {vector_size}")
 
@@ -188,7 +187,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--pdf", default=DEFAULT_PDF_PATH)
     parser.add_argument("--collection", default="multimodal_docs")
-    parser.add_argument("--ollama_model", default="nomic-embed-text")
+    parser.add_argument("--ollama_model", default="sentence-transformers/all-MiniLM-L6-v2")
     parser.add_argument("--export_index", action="store_true", help="Save local index for offline queries")
     args = parser.parse_args()
 

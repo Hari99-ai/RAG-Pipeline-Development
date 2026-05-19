@@ -12,6 +12,8 @@ import json
 import tempfile
 import importlib
 
+os.environ["USE_TF"] = "0"
+os.environ["HF_HUB_DISABLE_TF"] = "1"
 os.environ["TRANSFORMERS_NO_TF"] = "1"
 
 import streamlit as st
@@ -48,12 +50,9 @@ GROQ_MODELS = [
 ]
 
 # ---------------------------------------------------------------------------
-# Embeddings Import (Ollama - still used for embeddings)
+# Embeddings Import (HuggingFace)
 # ---------------------------------------------------------------------------
-try:
-    from langchain_ollama import OllamaEmbeddings
-except Exception:
-    from langchain_community.embeddings import OllamaEmbeddings
+from langchain_huggingface import HuggingFaceEmbeddings
 
 # ---------------------------------------------------------------------------
 # Groq LLM Import
@@ -222,7 +221,7 @@ def init_vectorstore(collection_name, embedding_model):
     """Initialise Qdrant vectorstore or fall back to local index."""
     qdrant_url = os.getenv("QDRANT_URL", "http://localhost:6333")
     qdrant_api_key = os.getenv("QDRANT_API_KEY")
-    embeddings = OllamaEmbeddings(model=embedding_model)
+    embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
 
     # Try Qdrant
     try:
@@ -294,7 +293,7 @@ def index_pdf(pdf_path, collection_name, embedding_model, export_local=True, pro
     blocks = extract_pdf_multimodal(pdf_path)
     chunks = chunk_text(blocks)
 
-    embeddings = OllamaEmbeddings(model=embedding_model)
+    embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
 
     # Try Qdrant first
     qdrant_ok = False
@@ -429,14 +428,10 @@ with st.sidebar:
     default_groq = GROQ_MODELS[0]
     llm_model = st.selectbox("Groq Model", GROQ_MODELS, index=0)
 
-    # Embedding Model (Ollama)
-    st.subheader("Embeddings (Ollama)")
-    _known_embed_models = ["nomic-embed-text", "mxbai-embed-large", "all-minilm", "nomic-embed-text-v1.5"]
-    available_ollama = ollama_list_models()
-    embed_options = [m for m in available_ollama if m in _known_embed_models]
-    if not embed_options:
-        embed_options = ["nomic-embed-text"]
-    embedding_model = st.selectbox("Embedding Model", embed_options, index=0)
+    # Embedding Model (HuggingFace)
+    st.subheader("Embeddings (HuggingFace)")
+    embedding_model = "sentence-transformers/all-MiniLM-L6-v2"
+    st.info(f"Model: {embedding_model}")
 
     # Retrieval settings
     st.subheader("Retrieval")
@@ -608,13 +603,8 @@ with tab_status:
                 st.error("GROQ_API_KEY not set in .env")
 
     with col2:
-        st.markdown("**Ollama (Embeddings)**")
-        ollama_ok = check_ollama_health()
-        if ollama_ok:
-            st.success("Ollama is running")
-        else:
-            st.warning("Ollama is NOT running (needed for embeddings)")
-            st.caption("Start with: `ollama serve`")
+        st.markdown("**Embeddings (HuggingFace)**")
+        st.success("HuggingFace Embeddings loaded locally")
 
     with col3:
         st.markdown("**Qdrant**")

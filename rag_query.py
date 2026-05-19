@@ -28,6 +28,8 @@ from dotenv import load_dotenv
 # =====================================
 # ENVIRONMENT SETUP
 # =====================================
+os.environ["USE_TF"] = "0"
+os.environ["HF_HUB_DISABLE_TF"] = "1"
 os.environ["TRANSFORMERS_NO_TF"] = "1"
 load_dotenv()
 
@@ -48,12 +50,12 @@ print(f"💾 System RAM detected: {RAM_GB} GB")
 # IMPORT LLM + EMBEDDINGS
 # =====================================
 try:
-    from langchain_ollama import OllamaEmbeddings, OllamaLLM
-    print("✅ Using langchain_ollama for embeddings & LLM.")
+    from langchain_ollama import OllamaLLM
+    print("✅ Using langchain_ollama for LLM.")
 except Exception:
-    from langchain_community.embeddings import OllamaEmbeddings
     from langchain_community.llms import Ollama as OllamaLLM
-    print("✅ Using langchain_community for embeddings & LLM.")
+    print("✅ Using langchain_community for LLM.")
+from langchain_huggingface import HuggingFaceEmbeddings
 
 # =====================================
 # IMPORT QDRANT
@@ -78,7 +80,7 @@ def init_qdrant_vectorstore(collection_name=DEFAULT_COLLECTION, embedding_model=
     qdrant_url = os.getenv("QDRANT_URL", "http://localhost:6333")
     qdrant_api_key = os.getenv("QDRANT_API_KEY")
     print(f"🔗 Connecting to Qdrant: {qdrant_url}")
-    embeddings = OllamaEmbeddings(model=embedding_model)
+    embeddings = HuggingFaceEmbeddings(model_name=embedding_model)
 
     try:
         if qdrant_api_key:
@@ -206,7 +208,7 @@ def main():
     parser = argparse.ArgumentParser(description="Run RAG query using Ollama + Qdrant.")
     parser.add_argument("--question", help="Question to ask the RAG system.")
     parser.add_argument("--collection", default=DEFAULT_COLLECTION)
-    parser.add_argument("--embedding_model", default="nomic-embed-text")
+    parser.add_argument("--embedding_model", default="sentence-transformers/all-MiniLM-L6-v2")
     parser.add_argument("--llm_model", default=OLLAMA_MODEL)
     parser.add_argument("--k", type=int, default=4)
     args = parser.parse_args()

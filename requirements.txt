@@ -11,3 +11,4 @@ python-dotenv
 streamlit
 scikit-learn
 torchvision
+langchain-huggingface

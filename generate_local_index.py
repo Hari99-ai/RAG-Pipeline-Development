@@ -7,27 +7,17 @@ Usage:
 """
 import argparse
 import json
+import os
 import sys
 from pathlib import Path
 
+os.environ["USE_TF"] = "0"
+os.environ["HF_HUB_DISABLE_TF"] = "1"
+os.environ["TRANSFORMERS_NO_TF"] = "1"
+
 import numpy as np
 
-# try known Ollama embeddings locations
-OllamaEmbeddings = None
-_import_errs = []
-for mod_path in ("langchain_ollama", "langchain_community.embeddings", "langchain_community.embeddings.ollama"):
-    try:
-        mod = __import__(mod_path, fromlist=["OllamaEmbeddings"])
-        OllamaEmbeddings = getattr(mod, "OllamaEmbeddings")
-        break
-    except Exception as e:
-        _import_errs.append(f"{mod_path}: {e!r}")
-
-if OllamaEmbeddings is None:
-    print("❌ Cannot find OllamaEmbeddings. Tried:\n" + "\n".join(_import_errs), file=sys.stderr)
-    print("Install a compatible package set, e.g.:")
-    print("  python -m pip install --force-reinstall langchain-ollama langchain-core langchain")
-    sys.exit(2)
+from langchain_huggingface import HuggingFaceEmbeddings
 
 
 def load_docs(docs_path: Path):
@@ -52,7 +42,7 @@ def main():
     parser.add_argument("--index-dir", type=Path, default=Path(__file__).resolve().parent / "index")
     parser.add_argument("--docs-file", type=str, default="docs.json")
     parser.add_argument("--emb-file", type=str, default="embeddings.npy")
-    parser.add_argument("--model", type=str, default="nomic-embed-text", help="Ollama embedding model")
+    parser.add_argument("--model", type=str, default="sentence-transformers/all-MiniLM-L6-v2", help="HuggingFace embedding model")
     args = parser.parse_args()
 
     index_dir: Path = args.index_dir
@@ -71,9 +61,9 @@ def main():
         sys.exit(4)
 
     try:
-        embedder = OllamaEmbeddings(model=args.model)
+        embedder = HuggingFaceEmbeddings(model_name=args.model)
     except Exception as e:
-        print("❌ Failed to instantiate OllamaEmbeddings:", e, file=sys.stderr)
+        print("Failed to instantiate HuggingFaceEmbeddings:", e, file=sys.stderr)
         sys.exit(5)
 
     # embed in batches to avoid memory spikes
@@ -90,7 +80,7 @@ def main():
             vectors.append(vecs)
         vectors = np.vstack(vectors).astype(np.float32)
     except Exception as e:
-        print("❌ Embedding generation failed:", e, file=sys.stderr)
+        print("Embedding generation failed:", e, file=sys.stderr)
         sys.exit(6)
 
     try:
@@ -99,12 +89,12 @@ def main():
         with (index_dir / args.docs_file).open("w", encoding="utf-8") as fh:
             json.dump(docs, fh, ensure_ascii=False, indent=2)
     except Exception as e:
-        print("❌ Failed to save index files:", e, file=sys.stderr)
+        print("Failed to save index files:", e, file=sys.stderr)
         sys.exit(7)
 
-    print(f"✅ Generated {vectors.shape[0]} embeddings (dim={vectors.shape[1]})")
-    print(f"📁 Saved embeddings to: {emb_path}")
-    print(f"📁 Saved docs to: {index_dir / args.docs_file}")
+    print(f"[OK] Generated {vectors.shape[0]} embeddings (dim={vectors.shape[1]})")
+    print(f"[File] Saved embeddings to: {emb_path}")
+    print(f"[File] Saved docs to: {index_dir / args.docs_file}")
 
 
 if __name__ == "__main__":
