@@ -377,12 +377,23 @@ def query_rag(question, retriever, llm_model, summarize=False):
     context = "\n\n".join(d.page_content for d in docs)
     sources = [d.metadata.get("source", "unknown") for d in docs]
 
-    # Extract unique images from retrieved documents
+    # Extract unique images from retrieved documents with robust path resolution
     images = []
     for d in docs:
         for img_path in d.metadata.get("images", []):
-            if img_path and os.path.exists(img_path) and img_path not in images:
-                images.append(img_path)
+            if not img_path:
+                continue
+            # Normalize path backslashes
+            normalized_path = img_path.replace("\\", "/")
+            if not os.path.exists(normalized_path):
+                # Attempt to find it relative to BASE_DIR/extracted_images
+                basename = os.path.basename(normalized_path)
+                workspace_path = os.path.join(BASE_DIR, "extracted_images", basename)
+                if os.path.exists(workspace_path):
+                    normalized_path = workspace_path
+            
+            if os.path.exists(normalized_path) and normalized_path not in images:
+                images.append(normalized_path)
 
     # Render high-resolution screenshots of the matching pages from the source PDF
     page_screenshots = []
@@ -390,7 +401,9 @@ def query_rag(question, retriever, llm_model, summarize=False):
         source_pdf = d.metadata.get("source")
         page_num = d.metadata.get("page")
         if source_pdf and page_num:
-            pdf_path = os.path.join(DATA_DIR, source_pdf)
+            # Locate PDF path relative to DATA_DIR
+            basename_pdf = os.path.basename(source_pdf)
+            pdf_path = os.path.join(DATA_DIR, basename_pdf)
             if os.path.exists(pdf_path):
                 try:
                     doc = fitz.open(pdf_path)
@@ -399,11 +412,12 @@ def query_rag(question, retriever, llm_model, summarize=False):
                         pix = page.get_pixmap(dpi=110)
                         screenshot_dir = os.path.join(BASE_DIR, "page_screenshots")
                         os.makedirs(screenshot_dir, exist_ok=True)
-                        screenshot_name = f"{os.path.splitext(source_pdf)[0]}_page_{page_num}.png"
+                        screenshot_name = f"{os.path.splitext(basename_pdf)[0]}_page_{page_num}.png"
                         screenshot_path = os.path.join(screenshot_dir, screenshot_name)
                         pix.save(screenshot_path)
-                        if screenshot_path not in page_screenshots:
-                            page_screenshots.append(screenshot_path)
+                        normalized_scr = screenshot_path.replace("\\", "/")
+                        if normalized_scr not in page_screenshots:
+                            page_screenshots.append(normalized_scr)
                 except Exception:
                     pass
 
@@ -436,14 +450,13 @@ Answer:"""
             answer = f"**Retrieved Context Summary:**\n{summary_text}\n\n---\n\n**RAG Answer:**\n{answer}"
 
     except Exception as e:
-        st.warning("Groq API failed or is unavailable. Showing retrieved context instead.")
-        answer = f"""⚠️ **Groq API failed or is unavailable.**
+        answer = f"""⚠️ **Groq API failed or is unavailable. Showing retrieved context instead:**
 
-*Showing retrieved document context instead:*
+---
+### 📚 Retrieved Context
 
--------------------------
 {context}
--------------------------"""
+---"""
 
     return answer, sources, images, page_screenshots
 
