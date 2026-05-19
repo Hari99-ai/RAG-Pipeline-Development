@@ -1,269 +1,149 @@
-<<<<<<< HEAD
 # 🧠 Multimodal RAG Pipeline for Educational Content
 
-A fully functional **Retrieval-Augmented Generation (RAG)** pipeline built with **LangChain**, **Ollama**, and **Qdrant**, designed to query and summarize multimodal PDF documents containing **text, mathematical formulas, and diagrams**.
+A fully functional, modern **Retrieval-Augmented Generation (RAG)** pipeline designed to parse, index, query, and summarize multimodal PDF documents containing **text, mathematical formulas, and diagrams**. 
 
-This project was developed as part of an **Intern Interview Assignment** to demonstrate applied **LLM and Data Science** skills.
+This repository supports both a standard **Command Line Interface (CLI)** and a premium **Streamlit Web Application** for interactive chat and document indexing.
+
+---
+
+## 📸 Web Application Interface
+
+### 🔹 PDF Indexing Interface
+Easily upload a PDF document, chunk it, embed it using HuggingFace serverless models, and store it in Qdrant or export it for offline local use.
+![PDF Indexing Tab](assets/index_pdf_tab.png)
+
+### 🔹 System Health & Status
+Monitor the status of your services in real-time, including Groq API connectivity, HuggingFace Embeddings, and Qdrant database status.
+![System Status Tab](assets/system_status_tab.png)
 
 ---
 
 ## 🚀 Objective
 
-To build a **console-based RAG system** capable of:
-
-- Parsing and indexing complex educational PDFs (text + images/formulas).  
-- Storing vector embeddings in **Qdrant**.  
-- Using **Ollama-supported LLMs** (e.g., `mistral`, `llama3`) for context-augmented responses.  
-- Demonstrating caching, summarization, and multimodal query capabilities.
+To build an interactive and robust **RAG system** capable of:
+*   **Parsing & Indexing** complex educational PDFs (text + images/formulas) using PyMuPDF (`fitz`).
+*   **Vector Embeddings** powered by HuggingFace `sentence-transformers/all-MiniLM-L6-v2` (384-dimensional space) for serverless local or cloud execution.
+*   **Qdrant Vector Database** integration (with local in-memory fallback).
+*   **LLM Inference** via the high-speed **Groq API** (e.g., Llama-3.3-70b, Llama-3.1-8b).
+*   **Error-Resilient Fallback**: Gracefully displays the exact retrieved context/document chunks directly in the UI if the Groq API limits are exceeded or keys fail.
 
 ---
 
 ## 🧩 Tech Stack
 
 | Component | Technology Used |
-|------------|------------------|
-| **Programming Language** | Python |
-| **Framework** | LangChain |
-| **LLM Provider** | Ollama |
-| **Vector Store** | Qdrant |
+| :--- | :--- |
+| **Programming Language** | Python 3.12 |
+| **User Interface** | Streamlit |
+| **Orchestration Framework** | LangChain |
+| **LLM Provider** | Groq API (`ChatGroq`) |
+| **Vector Store** | Qdrant (Cloud / Local Docker / In-Memory Fallback) |
 | **PDF Parser** | PyMuPDF (`fitz`) |
-| **Embeddings Model** | `nomic-embed-text` |
-| **Caching & Memory** | LangChain Prompt/Conversation Memory |
+| **Embeddings Model** | `sentence-transformers/all-MiniLM-L6-v2` (HuggingFace) |
+| **In-Memory Retrieval** | scikit-learn `NearestNeighbors` (Cosine Similarity) |
 
 ---
 
 ## 📁 Repository Structure
 
+```txt
 RAG-Pipeline-Development/
-
 │
-
-├── data/ # Sample or indexed files
-
-├── index/ # Vector index storage
-
-├── setup_pipeline.py # Handles PDF parsing, embeddings & Qdrant setup
-
-├── rag_query.py # Main RAG query engine
-
-├── generate_local_index.py # Helper for local embedding generation
-
-├── requirements.txt # Python dependencies
-
-└── README.md # Documentation
-
-
+├── assets/                  # Screenshot images for documentation
+│   ├── index_pdf_tab.png
+│   └── system_status_tab.png
+│
+├── data/                    # PDF data source directory
+│
+├── index/                   # Local vector index directory
+│   ├── embeddings.npy       # Pre-computed NumPy matrix of vectors
+│   └── docs.json            # Parsed document chunks and metadata
+│
+├── app.py                   # Main Streamlit web application
+├── setup_pipeline.py        # Pipeline setup script (CLI)
+├── rag_query.py             # RAG interactive querying engine (CLI)
+├── generate_local_index.py  # Local index generator utility
+├── requirements.txt         # Project dependencies
+└── README.md                # Project documentation
+```
 
 ---
 
 ## ⚙️ Installation & Setup
 
-### 1️⃣ Clone the repository
-
+### 1️⃣ Clone the Repository
+```bash
 git clone https://github.com/Hari99-ai/RAG-Pipeline-Development.git
 cd RAG-Pipeline-Development
-### 2️⃣ Create and activate a virtual environment
+```
 
+### 2️⃣ Create and Activate a Virtual Environment
+```bash
+# Windows
 python -m venv .venv
-source .venv/bin/activate      # For Linux/Mac
-.venv\Scripts\activate         # For Windows
-### 3️⃣ Install dependencies
+.venv\Scripts\activate
 
-pip install -r requirements.txt
-### 4️⃣ Start Qdrant (via Docker)
-
-docker run -p 6333:6333 qdrant/qdrant
-### 5️⃣ Verify Ollama is installed
-Install Ollama from https://ollama.ai/download and pull required models:
-
-ollama pull mistral 
-ollama pull nomic-embed-text
-  
-## 🧮 Usage
-🔹 Step 1: Index the PDF
-
-python setup_pipeline.py
-Expected Output:
-
-mathematica
-
-✅ Connected successfully!
-📚 PDF parsed and 50 chunks indexed in Qdrant.
-
-🔹 Step 2: Ask Questions (RAG Query)
-
-python rag_query.py --question "Explain the steps involved in solving a quadratic equation."
-Expected Output:
-
-Final Answer: [LLM-generated response]
-Sources: [Chunk references]
-
-🔹 Step 3: Summarization
-
-python rag_query.py --summarize --question "What is Arithmetic Progression?"
-Output:
-1. Retrieved Context Summary: [Brief summary]
-2. Final RAG Answer: [LLM output]
-3. 
-🔹 Step 4: Caching Demonstration
-Run the same question twice to verify caching/memory usage.
-
-🧩 Features Summary
-
-✅ PDF parsing (text + image/formulas)
-
-✅ Qdrant vector storage
-
-✅ Ollama-based embeddings and generation
-
-✅ Context summarization before generation
-
-✅ Prompt/Conversational caching
-
-✅ Command-line interface (no UI required)
-
-📊 Example Queries
-
-python rag_query.py --question "What does the diagram of a trapezoid represent?"
-python rag_query.py --question "Who proposed the Pythagorean theorem?"
-python rag_query.py --question "What is the formula associated with his discovery?"
-
-🧑‍💻 Author
-Hari Om
-
-📧 hariom993126@gmail.com
-=======
-# 🧠 Multimodal RAG Pipeline for Educational Content
-
-A fully functional **Retrieval-Augmented Generation (RAG)** pipeline built with **LangChain**, **Ollama**, and **Qdrant**, designed to query and summarize multimodal PDF documents containing **text, mathematical formulas, and diagrams**.
-
-This project was developed as part of an **Intern Interview Assignment** to demonstrate applied **LLM and Data Science** skills.
-
----
-
-## 🚀 Objective
-
-To build a **console-based RAG system** capable of:
-
-- Parsing and indexing complex educational PDFs (text + images/formulas).  
-- Storing vector embeddings in **Qdrant**.  
-- Using **Ollama-supported LLMs** (e.g., `mistral`, `llama3`) for context-augmented responses.  
-- Demonstrating caching, summarization, and multimodal query capabilities.
-
----
-
-## 🧩 Tech Stack
-
-| Component | Technology Used |
-|------------|------------------|
-| **Programming Language** | Python |
-| **Framework** | LangChain |
-| **LLM Provider** | Ollama |
-| **Vector Store** | Qdrant |
-| **PDF Parser** | PyMuPDF (`fitz`) |
-| **Embeddings Model** | `nomic-embed-text` |
-| **Caching & Memory** | LangChain Prompt/Conversation Memory |
-
----
-
-## 📁 Repository Structure
-
-RAG-Pipeline-Development/
-
-│
-
-├── data/ # Sample or indexed files
-
-├── index/ # Vector index storage
-
-├── setup_pipeline.py # Handles PDF parsing, embeddings & Qdrant setup
-
-├── rag_query.py # Main RAG query engine
-
-├── generate_local_index.py # Helper for local embedding generation
-
-├── requirements.txt # Python dependencies
-
-└── README.md # Documentation
-
-
-
----
-
-## ⚙️ Installation & Setup
-
-### 1️⃣ Clone the repository
-
-git clone https://github.com/Hari99-ai/RAG-Pipeline-Development.git
-cd RAG-Pipeline-Development
-### 2️⃣ Create and activate a virtual environment
-
+# Linux / MacOS
 python -m venv .venv
-source .venv/bin/activate      # For Linux/Mac
-.venv\Scripts\activate         # For Windows
-### 3️⃣ Install dependencies
+source .venv/bin/activate
+```
 
+### 3️⃣ Install Dependencies
+```bash
 pip install -r requirements.txt
-### 4️⃣ Start Qdrant (via Docker)
+```
 
-docker run -p 6333:6333 qdrant/qdrant
-### 5️⃣ Verify Ollama is installed
-Install Ollama from https://ollama.ai/download and pull required models:
+### 4️⃣ Configure Environment Variables
+Create a `.env` file in the root directory:
+```env
+GROQ_API_KEY=your_groq_api_key_here
+QDRANT_URL=http://localhost:6333
+# If using Qdrant Cloud:
+# QDRANT_API_KEY=your_qdrant_cloud_api_key
+```
 
-ollama pull mistral
-ollama pull nomic-embed-text
+---
 
-## 🧮 Usage
-🔹 Step 1: Index the PDF
+## 🧮 Running the Applications
 
-python setup_pipeline.py
-Expected Output:
+### 💻 Option A: Interactive Streamlit Web App (Recommended)
+Launch the beautiful UI to index your PDFs and chat in real-time:
+```bash
+python -m streamlit run app.py
+```
 
-mathematica
+### 💻 Option B: Command Line Interface (CLI)
 
-✅ Connected successfully!
-📚 PDF parsed and 50 chunks indexed in Qdrant.
+#### 🔸 Step 1: Index a PDF Document
+Index your document and upload to Qdrant or export as a local index:
+```bash
+python setup_pipeline.py --export_index
+```
 
-🔹 Step 2: Ask Questions (RAG Query)
-
+#### 🔸 Step 2: Query the RAG Pipeline
+Ask questions about your documents via the terminal:
+```bash
 python rag_query.py --question "Explain the steps involved in solving a quadratic equation."
-Expected Output:
+```
 
-Final Answer: [LLM-generated response]
-Sources: [Chunk references]
-
-🔹 Step 3: Summarization
-
+#### 🔸 Step 3: Context Summarization
+Get an AI-generated summary of the relevant context before the answer:
+```bash
 python rag_query.py --summarize --question "What is Arithmetic Progression?"
-Output:
-1. Retrieved Context Summary: [Brief summary]
-2. Final RAG Answer: [LLM output]
-3. 
-🔹 Step 4: Caching Demonstration
-Run the same question twice to verify caching/memory usage.
+```
 
-🧩 Features Summary
+---
 
-✅ PDF parsing (text + image/formulas)
+## 🧩 Key Features
 
-✅ Qdrant vector storage
+*   **Multimodal Parsing**: Extracts text blocks alongside embedded images and mathematical formulas.
+*   **Offline/Online Flexibility**: Can connect to an external Docker Qdrant database or run purely offline via local in-memory cosine searches on a stored NumPy vector matrix.
+*   **Serverless Embeddings**: Uses HuggingFace `sentence-transformers` for instant vector calculations, resolving local Ollama dependencies.
+*   **Groq API Fallback**: Catches API rate limits or token exhaustion exceptions gracefully, showing the raw retrieved document text to the user.
 
-✅ Ollama-based embeddings and generation
+---
 
-✅ Context summarization before generation
+## 🧑‍💻 Author
 
-✅ Prompt/Conversational caching
-
-✅ Command-line interface (no UI required)
-
-📊 Example Queries
-
-python rag_query.py --question "What does the diagram of a trapezoid represent?"
-python rag_query.py --question "Who proposed the Pythagorean theorem?"
-python rag_query.py --question "What is the formula associated with his discovery?"
-
-🧑‍💻 Author
-Hari Om
-
-📧 hariom993126@gmail.com
->>>>>>> d9dbac14df2f064fb4db215e82149bcd300a21fb
+*   **Hari Om**
+*   **Email**: [hariom993126@gmail.com](mailto:hariom993126@gmail.com)
