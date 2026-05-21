@@ -118,6 +118,14 @@ def check_groq_health():
         return False
 
 
+def render_image_compat(image_path, caption=None):
+    """Render images across Streamlit versions that may not support `use_container_width`."""
+    try:
+        st.image(image_path, caption=caption, use_container_width=True)
+    except TypeError:
+        st.image(image_path, caption=caption)
+
+
 def ollama_list_models():
     """Return list of locally available Ollama model names."""
     try:
@@ -561,14 +569,14 @@ with tab_chat:
                     for idx, img_path in enumerate(msg["images"]):
                         with cols[idx % len(cols)]:
                             if os.path.exists(img_path):
-                                st.image(img_path, caption=os.path.basename(img_path), use_container_width=True)
+                                render_image_compat(img_path, caption=os.path.basename(img_path))
                 if msg.get("page_screenshots"):
                     st.write("📄 **Matching PDF Page Screenshots:**")
                     cols = st.columns(min(2, len(msg["page_screenshots"])))
                     for idx, scr_path in enumerate(msg["page_screenshots"]):
                         with cols[idx % len(cols)]:
                             if os.path.exists(scr_path):
-                                st.image(scr_path, caption=os.path.basename(scr_path), use_container_width=True)
+                                render_image_compat(scr_path, caption=os.path.basename(scr_path))
 
     # Chat input
     if st.session_state.vectorstore is not None:
@@ -600,7 +608,7 @@ with tab_chat:
                                 for idx, img_path in enumerate(images):
                                     with cols[idx % len(cols)]:
                                         if os.path.exists(img_path):
-                                            st.image(img_path, caption=os.path.basename(img_path), use_container_width=True)
+                                            render_image_compat(img_path, caption=os.path.basename(img_path))
 
                             # Render page screenshots if any
                             if page_screenshots:
@@ -609,7 +617,7 @@ with tab_chat:
                                 for idx, scr_path in enumerate(page_screenshots):
                                     with cols[idx % len(cols)]:
                                         if os.path.exists(scr_path):
-                                            st.image(scr_path, caption=os.path.basename(scr_path), use_container_width=True)
+                                            render_image_compat(scr_path, caption=os.path.basename(scr_path))
 
                         st.session_state.chat_history.append({
                             "role": "assistant",
