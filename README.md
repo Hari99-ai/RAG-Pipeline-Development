@@ -20,6 +20,12 @@ Easily upload a PDF document, chunk it, embed it using HuggingFace serverless mo
 Monitor the status of your services in real-time, including Groq API connectivity, HuggingFace Embeddings, and Qdrant database status.
 ![System Status Tab](assets/system_status_tab.png)
 
+### Chat Response Example
+Example of retrieved context summary and final RAG answer in the chat interface.
+
+<img width="1801" height="732" alt="image" src="https://github.com/user-attachments/assets/4121481b-47fd-41fd-9da8-9afb6b108d1f" />
+
+
 ---
 
 ## 🚀 Objective
